@@ -1,0 +1,37 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    container_name: keycloak
+    command: ["start-dev"]
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports:
+      - "8080:8080"
+    networks:
+      - zero-trust-net
+    healthcheck:
+      test: ["CMD-SHELL","/opt/keycloak/bin/kc.sh show-config || exit 1"]
+      interval: 10s
+      retries: 6
+
+  dummy-api:
+    build: ./dummy-api
+    container_name: dummy-api
+    environment:
+      - PORT=3000
+      # optional envs for Keycloak config (used by server.js)
+      - KC_HOST=keycloak
+      - KC_PORT=8080
+      - KC_REALM=ZeroTrustLab
+      - KC_CLIENT=dummy-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - keycloak
+    networks:
+      - zero-trust-net
+
+networks:
+  zero-trust-net:
+    driver: bridge
