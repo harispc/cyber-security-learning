@@ -1,0 +1,8 @@
+filebeat.inputs:
+- type: log
+  paths:
+    # Path di dalam container Filebeat (sesuai mount di docker-compose.yml)
+    - /var/log/myapp/*.log
+output.logstash:
+  # Mengirimkan output ke container Logstash
+  hosts: ["logstash:5044"]

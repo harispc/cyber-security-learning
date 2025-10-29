@@ -1,0 +1,35 @@
+# Hapus versi '3.8' yang sudah usang dan biarkan Docker Compose v2 yang baru
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak-server
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_password
+    ports:
+      - "8080:8080" # Keycloak Admin & Public Access
+    command: start-dev
+    volumes:
+      # Opsional: untuk persistensi data (direkomendasikan untuk lab serius)
+      - ./keycloak-data:/opt/keycloak/data
+    healthcheck: # Menambahkan healthcheck untuk memastikan Keycloak siap sebelum Flask mencoba terhubung
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  resource-server:
+    build:
+      context: ./flask-resource-server
+      dockerfile: Dockerfile
+    container_name: flask-resource-server
+    ports:
+      - "5000:5000" # Flask API Access
+    depends_on:
+      keycloak:
+        condition: service_healthy # Menunggu Keycloak benar-benar 'Ready'
+    environment:
+      # Variabel Konfigurasi untuk Flask
+      KC_REALM_URL: http://keycloak:8080/realms/ZeroTrustRealm
+      KC_CLIENT_ID: dummy-resource-server
+      KC_CLIENT_SECRET: EwyDwbatEveVDZ9ZazWUawIklzvKKjBj
